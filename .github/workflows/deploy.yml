@@ -1,5 +1,5 @@
 # Deploy Moltworker (OpenClaw) to Cloudflare Workers
-# Run manually or on push to main. Requires Docker for Sandbox image build.
+# Run manually or on push to main. Uses runner Docker for Sandbox image build.
 name: Deploy
 
 on:
@@ -9,9 +9,6 @@ on:
     paths-ignore:
       - '**.md'
       - '.github/workflows/test.yml'
-
-env:
-  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
 jobs:
   deploy:
@@ -32,11 +29,7 @@ jobs:
         run: npm run build
 
       - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
-          workingDirectory: .
         env:
-          NODE_VERSION: 22
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
