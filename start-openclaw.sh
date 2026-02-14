@@ -191,8 +191,9 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     const apiKey = process.env.CLOUDFLARE_AI_GATEWAY_API_KEY;
 
     let baseUrl;
+    const useCompat = (gwProvider === 'google-ai-studio' || gwProvider === 'google');
     if (accountId && gatewayId) {
-        baseUrl = 'https://gateway.ai.cloudflare.com/v1/' + accountId + '/' + gatewayId + '/' + gwProvider;
+        baseUrl = 'https://gateway.ai.cloudflare.com/v1/' + accountId + '/' + gatewayId + (useCompat ? '/compat' : '/' + gwProvider);
         if (gwProvider === 'workers-ai') baseUrl += '/v1';
     } else if (gwProvider === 'workers-ai' && process.env.CF_ACCOUNT_ID) {
         baseUrl = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CF_ACCOUNT_ID + '/ai/v1';
@@ -201,6 +202,7 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     if (baseUrl && apiKey) {
         const api = gwProvider === 'anthropic' ? 'anthropic-messages' : 'openai-completions';
         const providerName = 'cf-ai-gw-' + gwProvider;
+        const compatModelId = useCompat ? (gwProvider + '/' + modelId) : modelId;
 
         config.models = config.models || {};
         config.models.providers = config.models.providers || {};
@@ -208,12 +210,12 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
             baseUrl: baseUrl,
             apiKey: apiKey,
             api: api,
-            models: [{ id: modelId, name: modelId, contextWindow: 131072, maxTokens: 8192 }],
+            models: [{ id: compatModelId, name: compatModelId, contextWindow: 131072, maxTokens: 8192 }],
         };
         config.agents = config.agents || {};
         config.agents.defaults = config.agents.defaults || {};
-        config.agents.defaults.model = { primary: providerName + '/' + modelId };
-        console.log('AI Gateway model override: provider=' + providerName + ' model=' + modelId + ' via ' + baseUrl);
+        config.agents.defaults.model = { primary: providerName + '/' + compatModelId };
+        console.log('AI Gateway model override: provider=' + providerName + ' model=' + compatModelId + ' via ' + baseUrl);
     } else {
         console.warn('CF_AI_GATEWAY_MODEL set but missing required config (account ID, gateway ID, or API key)');
     }
